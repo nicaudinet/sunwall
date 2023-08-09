@@ -20,9 +20,9 @@ The `~/Wallpapers` directory also contains:
  - `.api_key` - the API key for ipgeolocation.io, the service used for sunrise and sunset times
  - `.scene` - the current scene
 
-To run the scripts automatically, one can set up a simple systemd service and timer. For example, for the update script:
+To run the scripts automatically, one can set up a simple systemd service and timer in userland. [This blog post](https://ihaveabackup.net/2016/03/14/wallpaper-changer-with-systemd/) is what I followed to get this to work. For example, for the update script:
 
-*sunwell-update.service*
+**sunwell-update.service**
 ```
 [Unit]
 Description=Randomize wallpaper
@@ -30,9 +30,10 @@ Description=Randomize wallpaper
 [Service]
 Type=oneshot
 ExecStart=/bin/python /home/niki/Projects/sunwall/randomize.py
+Environment=DISPLAY=:0.0
 ```
 
-*sunwell-update.timer*
+**sunwell-update.timer**
 ```
 [Unit]
 Description=Wallpaper randomize timer
@@ -42,12 +43,28 @@ OnCalendar=*-*-* 0:00:00
 OnBootSec=10s
 
 [Install]
-WantedBy=timers.target
+WantedBy=X.target
 ```
 
-Put the services in `/etc/systemd/system/` (you will need sudo rights). Then:
+**X.target**
+```
+[Unit]
+Description=Xorg server start
+```
+
+Put all three files in services in `~/.config/systemd/user/` (create it if you need to).
+
+`X.target` is an empty unit which represents the start of the X11 server. We need to start it manually by adding the following:
+
+**~/.xinitrc**
+```
+systemctl --user start X.target
+```
+
+Then, we can enable the timer so that it starts every time the X target is started:
 
 ```
-sudo systemd daemon-reload
-sudo systemd enable --now sunwall-update.timer
+systemctl --user enable sunwall-update.timer
 ```
+
+And with that we're done! If you want to check whether things are going to plan, you can check `systemctl --user` or `journalctl --user -u sunwall-update`. If you want to manually change the wallpaper, just run `systemctl --user start sunwall-update.service`.
