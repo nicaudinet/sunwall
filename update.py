@@ -57,7 +57,7 @@ if __name__ == "__main__":
     scene = get_scene()
 
     sunrise, sunset = get_sunset_times()
-    delta = timedelta(minutes=30)
+    delta = timedelta(hours=1)
     now = datetime.now()
     is_night = now < sunrise - delta or now > sunset + delta
     is_day = now > sunrise + delta and now < sunset - delta
